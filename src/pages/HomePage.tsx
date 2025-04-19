@@ -23,6 +23,16 @@ interface Product {
   isVegetarian?: boolean;
   originalPrice?: number;
   categoryId?: string;
+  options?: {
+    name: string;
+    type: 'radio' | 'checkbox';
+    required?: boolean;
+    choices: {
+      id: string;
+      name: string;
+      price?: number;
+    }[];
+  }[];
 }
 
 interface Banner {
@@ -54,12 +64,18 @@ const HomePage: React.FC = () => {
 
     // Запрос избранных продуктов
     axios.get(`${apiUrl}/api/products/featured`)
-      .then(response => setFeaturedProducts(response.data))
+      .then(response => {
+        console.log('Featured Products:', response.data);
+        setFeaturedProducts(response.data);
+      })
       .catch(error => console.error('Error fetching featured products:', error));
 
     // Запрос топ продуктов
     axios.get(`${apiUrl}/api/products/top`)
-      .then(response => setTopProducts(response.data))
+      .then(response => {
+        console.log('Top Products:', response.data);
+        setTopProducts(response.data);
+      })
       .catch(error => console.error('Error fetching top products:', error));
   }, []);
 

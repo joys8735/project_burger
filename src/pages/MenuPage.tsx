@@ -20,6 +20,16 @@ interface Product {
   image: string;
   description: string;
   categoryId: string;
+  options?: {
+    name: string;
+    type: 'radio' | 'checkbox';
+    required?: boolean;
+    choices: {
+      id: string;
+      name: string;
+      price?: number;
+    }[];
+  }[];
 }
 
 interface Banner {
@@ -38,14 +48,13 @@ const MenuPage: React.FC = () => {
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
-    console.log('API URL:', apiUrl); // Отладка
+    console.log('API URL:', apiUrl);
 
     // Запрос категорий
     axios
       .get(`${apiUrl}/api/categories`)
       .then(response => {
         console.log('Categories:', response.data);
-        // Добавляем категорию "All"
         setCategories([{ id: 'all', name: 'All', image: 'https://via.placeholder.com/150' }, ...response.data]);
       })
       .catch(error => console.error('Error fetching categories:', error));
@@ -189,4 +198,4 @@ const MenuPage: React.FC = () => {
   );
 };
 
-export default MenuPage;// Test change
+export default MenuPage;
