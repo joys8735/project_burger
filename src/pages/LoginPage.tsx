@@ -1,10 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, MessageCircle } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useUser } from '../context/UserContext';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -12,53 +12,62 @@ const LoginPage = () => {
   const [step, setStep] = useState<'methods' | 'phone-input' | 'otp'>('methods');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
-  
-  const handleTelegramLogin = () => {
-    // In a real app, implement Telegram OAuth
-    simulateLogin('Telegram');
-  };
-  
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.async = true;
+    script.setAttribute('data-telegram-login', '@meanger_stuabot'); // Замени на имя твоего бота
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-auth-url', 'https://food-app-backend-production-c1bf.up.railway.app/api/auth/telegram');
+    script.setAttribute('data-request-access', 'write');
+    document.getElementById('telegram-login')?.appendChild(script);
+
+    window.onTelegramAuth = (user: any) => {
+      console.log('Telegram auth data:', user);
+      axios.post('https://food-app-backend-production-c1bf.up.railway.app/api/auth/telegram', user)
+        .then(response => {
+          login(response.data.user, response.data.token);
+          toast.success('Logged in successfully via Telegram!');
+          navigate('/home');
+        })
+        .catch(error => {
+          console.error('Telegram login error:', error);
+          toast.error('Telegram login failed: ' + (error.response?.data?.error || error.message));
+        });
+    };
+
+    return () => {
+      const telegramLogin = document.getElementById('telegram-login');
+      if (telegramLogin && script.parentNode) {
+        telegramLogin.removeChild(script);
+      }
+    };
+  }, [login, navigate]);
+
   const handleGoogleLogin = () => {
-    // In a real app, implement Google OAuth
-    simulateLogin('Google');
+    toast.info('Google login not implemented yet');
   };
-  
+
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phoneNumber || phoneNumber.length < 10) {
       toast.error('Please enter a valid phone number');
       return;
     }
-    // In a real app, send OTP to the phone number
     setStep('otp');
     toast.success('OTP sent to your phone');
   };
-  
+
   const handleOtpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.length < 4) {
       toast.error('Please enter a valid OTP');
       return;
     }
-    // In a real app, verify OTP
-    simulateLogin('Phone');
+    toast.info('Phone login not implemented yet');
   };
-  
-  const simulateLogin = (method: string) => {
-    // Mock user data
-    const userData = {
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      balance: 25.00,
-      rewards: 150,
-      language: 'en'
-    };
-    
-    login(userData);
-    toast.success(`Logged in successfully via ${method}!`);
-    navigate('/home');
-  };
-  
+
   return (
     <div className="app-container page-container">
       <div className="sticky top-0 z-20 bg-white p-4 shadow-sm">
@@ -74,22 +83,16 @@ const LoginPage = () => {
           </h1>
         </div>
       </div>
-      
+
       <div className="p-6">
         {step === 'methods' && (
           <div className="space-y-6">
             <p className="text-center text-gray-600 mb-8">
               Choose your preferred login method
             </p>
-            
-            <button 
-              onClick={handleTelegramLogin}
-              className="w-full py-3 px-4 border border-blue-500 text-blue-500 rounded-xl flex items-center justify-center font-medium"
-            >
-              <MessageCircle size={24} className="mr-2" />
-              Continue with Telegram
-            </button>
-            
+
+            <div id="telegram-login" className="w-full flex justify-center"></div>
+
             <button 
               onClick={handleGoogleLogin}
               className="w-full py-3 px-4 bg-white border border-gray-300 text-gray-700 rounded-xl flex items-center justify-center font-medium shadow-sm"
@@ -102,7 +105,7 @@ const LoginPage = () => {
               </svg>
               Continue with Google
             </button>
-            
+
             <button 
               onClick={() => setStep('phone-input')}
               className="w-full py-3 px-4 bg-primary text-white rounded-xl flex items-center justify-center font-medium"
@@ -112,13 +115,13 @@ const LoginPage = () => {
             </button>
           </div>
         )}
-        
+
         {step === 'phone-input' && (
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
             <p className="text-center text-gray-600 mb-4">
               Enter your phone number to receive a verification code
             </p>
-            
+
             <div className="space-y-2">
               <label htmlFor="phone" className="text-sm font-medium">
                 Phone Number
@@ -133,7 +136,7 @@ const LoginPage = () => {
                 required
               />
             </div>
-            
+
             <button 
               type="submit"
               className="w-full py-3 px-4 bg-primary text-white rounded-xl font-medium"
@@ -142,13 +145,13 @@ const LoginPage = () => {
             </button>
           </form>
         )}
-        
+
         {step === 'otp' && (
           <form onSubmit={handleOtpSubmit} className="space-y-6">
             <p className="text-center text-gray-600 mb-4">
               Enter the 4-digit code sent to {phoneNumber}
             </p>
-            
+
             <div className="flex justify-center">
               <InputOTP 
                 maxLength={4}
@@ -159,7 +162,6 @@ const LoginPage = () => {
                     {slots && slots.length > 0 ? slots.map((slot, index) => (
                       <InputOTPSlot key={index} index={index} className="w-12 h-14 text-xl" />
                     )) : (
-                      // Fallback if slots is undefined or empty
                       Array(4).fill(0).map((_, index) => (
                         <InputOTPSlot key={index} index={index} className="w-12 h-14 text-xl" />
                       ))
@@ -168,11 +170,11 @@ const LoginPage = () => {
                 )}
               />
             </div>
-            
+
             <p className="text-center text-sm">
               Didn't receive code? <button type="button" className="text-primary font-medium">Resend</button>
             </p>
-            
+
             <button 
               type="submit"
               className="w-full py-3 px-4 bg-primary text-white rounded-xl font-medium"
