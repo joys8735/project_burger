@@ -36,6 +36,7 @@ const LoginPage = () => {
         .catch(error => {
           console.error('Telegram login error:', error.response?.data || error.message);
           const errorMessage = error.response?.data?.error || error.message;
+          console.log('Error message sent to toast:', errorMessage);
           toast.error(`Telegram login failed: ${errorMessage}`);
         });
     };
