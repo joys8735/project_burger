@@ -1,58 +1,65 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-import React, { createContext, useContext, useState } from "react";
-
-interface UserProfile {
+interface User {
+  id: string;
   name: string;
-  email: string;
+  email: string | null;
   balance: number;
   rewards: number;
-  language: string;
+  language: 'en' | 'uk' | 'ru';
 }
 
 interface UserContextType {
-  user: UserProfile | null;
-  isAuthenticated: boolean;
-  login: (userData: UserProfile) => void;
+  user: User | null;
+  login: (userData: User, token: string) => void;
   logout: () => void;
-  updateProfile: (data: Partial<UserProfile>) => void;
 }
 
-const UserContext = createContext<UserContextType>({
-  user: null,
-  isAuthenticated: false,
-  login: () => {},
-  logout: () => {},
-  updateProfile: () => {},
-});
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
-  const login = (userData: UserProfile) => {
+  useEffect(() => {
+    if (token) {
+      axios.get('https://food-app-backend-production-c1bf.up.railway.app/api/auth/user', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => {
+          setUser(response.data);
+        })
+        .catch(() => {
+          setToken(null);
+          localStorage.removeItem('token');
+        });
+    }
+  }, [token]);
+
+  const login = (userData: User, newToken: string) => {
     setUser(userData);
+    setToken(newToken);
+    localStorage.setItem('token', newToken);
   };
 
   const logout = () => {
     setUser(null);
-  };
-
-  const updateProfile = (data: Partial<UserProfile>) => {
-    if (user) {
-      setUser({ ...user, ...data });
-    }
+    setToken(null);
+    localStorage.removeItem('token');
   };
 
   return (
-    <UserContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      login,
-      logout,
-      updateProfile,
-    }}>
+    <UserContext.Provider value={{ user, login, logout }}>
       {children}
     </UserContext.Provider>
   );
 };
 
-export const useUser = () => useContext(UserContext);
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
+};

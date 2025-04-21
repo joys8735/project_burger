@@ -14,10 +14,11 @@ const LoginPage = () => {
   const [otp, setOtp] = useState('');
 
   useEffect(() => {
+    console.log('Loading Telegram Login Widget');
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.async = true;
-    script.setAttribute('data-telegram-login', '@meanger_stuabot'); // Замени на имя твоего бота
+    script.setAttribute('data-telegram-login', '@meanger_stuabot');
     script.setAttribute('data-size', 'large');
     script.setAttribute('data-auth-url', 'https://food-app-backend-production-c1bf.up.railway.app/api/auth/telegram');
     script.setAttribute('data-request-access', 'write');
@@ -27,17 +28,20 @@ const LoginPage = () => {
       console.log('Telegram auth data:', user);
       axios.post('https://food-app-backend-production-c1bf.up.railway.app/api/auth/telegram', user)
         .then(response => {
+          console.log('Telegram auth success:', response.data);
           login(response.data.user, response.data.token);
           toast.success('Logged in successfully via Telegram!');
           navigate('/home');
         })
         .catch(error => {
-          console.error('Telegram login error:', error);
-          toast.error('Telegram login failed: ' + (error.response?.data?.error || error.message));
+          console.error('Telegram login error:', error.response?.data || error.message);
+          const errorMessage = error.response?.data?.error || error.message;
+          toast.error(`Telegram login failed: ${errorMessage}`);
         });
     };
 
     return () => {
+      console.log('Cleaning up Telegram Login Widget');
       const telegramLogin = document.getElementById('telegram-login');
       if (telegramLogin && script.parentNode) {
         telegramLogin.removeChild(script);
